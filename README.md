@@ -54,14 +54,3 @@ This will clean up the context menu entries and remove the symbolic link, restor
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
-
-### Explanation of Changes:
-
-- **Overview Section**: Provides a brief explanation of what the repository does.
-- **Setup Section**: Explains what `setup.ps1` does and how to run it.
-- **Removal Section**: Explains what `remove.ps1` does and how to run it.
-- **Requirements Section**: Lists the requirements for running the scripts.
-- **License Section**: Mention the project license.
-
-This updated `README.md` should help users understand the purpose of your repository and how to use the provided scripts. Let me know if you need any further adjustments!
