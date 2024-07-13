@@ -43,7 +43,3 @@ foreach ($File in $Files) {
         Log "Skipped $($File.Name) - already exists as $ArchiveFileName" "Yellow"
     }
 }
-
-# Pause at the end to see the output
-Log "Press any key to exit..." "Cyan"
-[System.Console]::ReadKey() | Out-Null

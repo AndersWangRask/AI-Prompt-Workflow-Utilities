@@ -1,3 +1,24 @@
+<#
+.SYNOPSIS
+    Converts .docx or .pdf files to Markdown format (.md) using Pandoc.
+
+.DESCRIPTION
+    This script takes a file path as a parameter and converts the file to Markdown format (.md).
+    It supports .docx and .pdf files. If an archive script (archive.ps1) is found in the same directory,
+    it executes the archive script before performing the conversion.
+
+.PARAMETER FilePath
+    The full path of the .docx or .pdf file to be converted.
+
+.NOTES
+    - The script requires Pandoc to be installed and available in the system PATH.
+    - Pandoc can be downloaded from: https://pandoc.org/installing.html
+
+.EXAMPLE
+    .\ConvertToMarkdown.ps1 -FilePath "C:\path\to\your\file.docx"
+
+#>
+
 param (
     [string]$FilePath
 )
