@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    Downloads and installs the latest version of Pandoc, verifies the installation, and adds pandoc.exe to the system PATH.
+    Downloads and installs the latest version of Pandoc if not already installed or outdated, verifies the installation, and adds pandoc.exe to the system PATH if necessary.
 
 .DESCRIPTION
-    This script queries the GitHub API to find the latest release of Pandoc, downloads the installer, launches the installer,
-    waits for the installation to complete, verifies that pandoc.exe is installed in the expected location, and adds pandoc.exe
-    to the system PATH if necessary.
+    This script queries the GitHub API to find the latest release of Pandoc, checks the installed version (if any),
+    downloads and installs Pandoc if necessary, verifies that pandoc.exe is installed in the expected location,
+    and adds pandoc.exe to the system PATH if it is not already there.
 
 .NOTES
     - The script requires elevated privileges (run as administrator).
@@ -28,10 +28,44 @@ function Get-LatestPandocRelease {
     return $response
 }
 
+# Function to get the installed Pandoc version
+function Get-InstalledPandocVersion {
+    try {
+        $pandocVersionOutput = & pandoc --version 2>$null
+        if ($pandocVersionOutput) {
+            $pandocVersion = $pandocVersionOutput | Select-String -Pattern "pandoc.exe\s(\d+\.\d+\.\d+\.\d+|\d+\.\d+\.\d+)" | ForEach-Object { $_.Matches.Groups[1].Value }
+            return $pandocVersion
+        }
+    } catch {
+        return $null
+    }
+    return $null
+}
+
+# Function to remove any Pandoc paths from the user profile directory
+function Remove-UserPandocPath {
+    $userPandocPath = "C:\Users\$env:USERNAME\AppData\Local\Pandoc"
+    $envPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+    $updatedPath = ($envPath -split ';') -ne $userPandocPath
+    $newPath = ($updatedPath -join ';')
+    [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::User)
+    Write-Host "Removed user Pandoc path: $userPandocPath" -ForegroundColor Yellow
+}
+
+# Function to uninstall Pandoc if it is installed
+function Uninstall-Pandoc {
+    Write-Host "Uninstalling existing Pandoc installation..." -ForegroundColor Yellow
+    Start-Process msiexec.exe -ArgumentList "/x pandoc /quiet /norestart" -Wait
+    Write-Host "Uninstallation complete." -ForegroundColor Yellow
+}
+
+# Remove any existing Pandoc paths in the user profile directory
+Remove-UserPandocPath
+
 # Get the latest release information
 Write-Host "Fetching the latest Pandoc release information..." -ForegroundColor Cyan
 $latestRelease = Get-LatestPandocRelease
-$pandocVersion = $latestRelease.tag_name
+$latestVersion = $latestRelease.tag_name.TrimStart('v')
 $installerAsset = $latestRelease.assets | Where-Object { $_.name -like "*windows-x86_64.msi" }
 
 if (-not $installerAsset) {
@@ -42,24 +76,46 @@ if (-not $installerAsset) {
 $pandocUrl = $installerAsset.browser_download_url
 $installerPath = "$env:TEMP\pandoc-installer.msi"
 
-# Download the Pandoc installer
-Write-Host "Downloading Pandoc installer ($pandocVersion)..." -ForegroundColor Cyan
+# Output the temporary location where the MSI is downloaded
+Write-Host "Downloading Pandoc installer to $installerPath" -ForegroundColor Cyan
 Invoke-WebRequest -Uri $pandocUrl -OutFile $installerPath
 
-# Launch the installer
-Write-Host "Launching Pandoc installer..." -ForegroundColor Cyan
-Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /quiet /norestart" -Wait
+# Check the installed Pandoc version
+$installedVersion = Get-InstalledPandocVersion
 
-# Verify the installation
-$pandocPath = "C:\Program Files\Pandoc\pandoc.exe"
-if (Test-Path -Path $pandocPath) {
-    Write-Host "Pandoc installed successfully." -ForegroundColor Green
+if ($installedVersion) {
+    Write-Host "Installed Pandoc version: $installedVersion" -ForegroundColor Yellow
 } else {
-    Write-Host "Pandoc installation failed." -ForegroundColor Red
-    exit
+    Write-Host "Pandoc is not currently installed." -ForegroundColor Yellow
 }
 
-# Add Pandoc to the system PATH if not already present
+if ($installedVersion -eq $latestVersion) {
+    Write-Host "Pandoc is already up to date (version $installedVersion)." -ForegroundColor Green
+} else {
+    # Uninstall existing Pandoc if installed
+    if ($installedVersion) {
+        Uninstall-Pandoc
+    }
+    
+    # Launch the installer and specify the installation directory for all users
+    Write-Host "Launching Pandoc installer..." -ForegroundColor Cyan
+    Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /quiet /norestart ALLUSERS=1" -Wait
+
+    # Verify the installation
+    $pandocPath = "C:\Program Files\Pandoc\pandoc.exe"
+    if (Test-Path -Path $pandocPath) {
+        Write-Host "Pandoc installed successfully." -ForegroundColor Green
+    } else {
+        Write-Host "Pandoc installation failed." -ForegroundColor Red
+        exit
+    }
+}
+
+# Check the updated Pandoc version
+$installedVersion = Get-InstalledPandocVersion
+Write-Host "Updated Pandoc version: $installedVersion" -ForegroundColor Yellow
+
+# Add Pandoc to the system PATH if not already present or if the PATH was not updated
 $envPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
 if (-not $envPath.Contains("C:\Program Files\Pandoc")) {
     Write-Host "Adding Pandoc to the system PATH..." -ForegroundColor Cyan
