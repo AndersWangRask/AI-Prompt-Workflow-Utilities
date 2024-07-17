@@ -1,10 +1,11 @@
 <#
 .SYNOPSIS
-    Downloads and installs Pandoc, verifies the installation, and adds pandoc.exe to the system PATH.
+    Downloads and installs the latest version of Pandoc, verifies the installation, and adds pandoc.exe to the system PATH.
 
 .DESCRIPTION
-    This script downloads the Pandoc installer, launches the installer, waits for the installation to complete,
-    verifies that pandoc.exe is installed in the expected location, and adds pandoc.exe to the system PATH if necessary.
+    This script queries the GitHub API to find the latest release of Pandoc, downloads the installer, launches the installer,
+    waits for the installation to complete, verifies that pandoc.exe is installed in the expected location, and adds pandoc.exe
+    to the system PATH if necessary.
 
 .NOTES
     - The script requires elevated privileges (run as administrator).
@@ -20,12 +21,29 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-# Define the download URL for Pandoc
-$pandocUrl = "https://github.com/jgm/pandoc/releases/download/3.1/pandoc-3.1-windows-x86_64.msi"
+# Function to get the latest release information from GitHub
+function Get-LatestPandocRelease {
+    $apiUrl = "https://api.github.com/repos/jgm/pandoc/releases/latest"
+    $response = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell" }
+    return $response
+}
+
+# Get the latest release information
+Write-Host "Fetching the latest Pandoc release information..." -ForegroundColor Cyan
+$latestRelease = Get-LatestPandocRelease
+$pandocVersion = $latestRelease.tag_name
+$installerAsset = $latestRelease.assets | Where-Object { $_.name -like "*windows-x86_64.msi" }
+
+if (-not $installerAsset) {
+    Write-Host "Could not find a suitable installer for the current platform." -ForegroundColor Red
+    exit
+}
+
+$pandocUrl = $installerAsset.browser_download_url
 $installerPath = "$env:TEMP\pandoc-installer.msi"
 
 # Download the Pandoc installer
-Write-Host "Downloading Pandoc installer..." -ForegroundColor Cyan
+Write-Host "Downloading Pandoc installer ($pandocVersion)..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $pandocUrl -OutFile $installerPath
 
 # Launch the installer
