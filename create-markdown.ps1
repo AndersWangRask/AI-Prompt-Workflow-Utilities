@@ -13,6 +13,7 @@
 .NOTES
     - The script requires Pandoc to be installed and available in the system PATH.
     - Pandoc can be downloaded from: https://pandoc.org/installing.html
+    - Or it can be installed using the install-pandoc.ps1 script.
 
 .EXAMPLE
     .\ConvertToMarkdown.ps1 -FilePath "C:\path\to\your\file.docx"
