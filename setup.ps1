@@ -77,3 +77,31 @@ Set-ItemProperty -Path "$ContextMenuPathPdfDocx\\command" -Name "(Default)" -Val
 
 # Output the result
 Write-Host "Context menu entries created for .docx, .pdf, and .md files." -ForegroundColor Green
+
+
+# Setup for Combine and Convert to DOCX utility
+# This section adds a shortcut to the SendTo menu for the combine-and-convert.bat script
+# The utility allows users to select multiple Markdown files, combine them, and convert to a single DOCX file
+
+# Define the path for the combine-and-convert.bat file
+# This bat file acts as an intermediary between the SendTo menu and the PowerShell script
+$CombineAndConvertBat = "$TargetDir\combine-and-convert.bat"
+
+# Define the SendTo folder path
+# The SendTo folder is a special Windows folder that integrates with the right-click context menu
+$SendToFolder = [System.Environment]::GetFolderPath('ApplicationData') + "\Microsoft\Windows\SendTo"
+
+# Create the shortcut in the SendTo folder
+# This allows users to select multiple Markdown files, right-click, and choose this option from the SendTo menu
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("$SendToFolder\Combine and Convert to DOCX.lnk")
+$Shortcut.TargetPath = $CombineAndConvertBat
+$Shortcut.Save()
+
+# Provide feedback to the user about the creation of the SendTo shortcut
+Write-Host "SendTo shortcut 'Combine and Convert to DOCX' created for combine-and-convert.bat" -ForegroundColor Green
+Write-Host "You can now select multiple Markdown files, right-click, and use 'Send To' -> 'Combine and Convert to DOCX'" -ForegroundColor Green
+
+# Clean up the COM object to free resources
+# This is a good practice when working with COM objects in PowerShell
+[System.Runtime.Interopservices.Marshal]::ReleaseComObject($WshShell) | Out-Null
