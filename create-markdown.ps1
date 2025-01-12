@@ -14,9 +14,10 @@
     - The script requires Pandoc to be installed and available in the system PATH.
     - Pandoc can be downloaded from: https://pandoc.org/installing.html
     - Or it can be installed using the install-pandoc.ps1 script.
+    - Apparently Pandoc can no longer convert from PDF to Markdown, so this feature no longer works
 
 .EXAMPLE
-    .\ConvertToMarkdown.ps1 -FilePath "C:\path\to\your\file.docx"
+    .\create-markdown.ps1 -FilePath "C:\path\to\your\file.docx"
 
 #>
 

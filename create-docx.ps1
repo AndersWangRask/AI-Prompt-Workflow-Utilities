@@ -13,9 +13,10 @@
 .NOTES
     - The script requires Pandoc to be installed and available in the system PATH.
     - Pandoc can be downloaded from: https://pandoc.org/installing.html
+    - Apparently Pandoc can no longer convert from PDF to Docx, so this feature no longer works
 
 .EXAMPLE
-    .\ConvertToDocx.ps1 -FilePath "C:\path\to\your\file.pdf"
+    .\create-docx.ps1 -FilePath "C:\path\to\your\file.pdf"
 
 #>
 
